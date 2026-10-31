@@ -4,6 +4,16 @@
 
 ChargeGuard（充电守卫，简称 CG）是面向 iPhone 的充电控制工具：把电量停在你设定的值，避开高温满充，延长电池寿命。它不是硬件旁路充电，而是软件层充电策略控制。仓库为 xstar68/ChargeGuard，应用、包、守护进程与数据标识均为 ChargeGuard；源码目录与类名前缀、URL Scheme `cl` 仍为技术内部标识，不影响使用。
 
+## 界面介绍
+
+<img src="docs/assets/chargeguard-icon-1024.png" alt="ChargeGuard 图标" width="120">
+
+下图为**新界面设计预览**（按 v3 界面设计稿绘制，不是真机截图；真机截图待 v3.0 真机测试后补充）：
+
+| 主界面 | 更多功能 | 历史统计 |
+| --- | --- | --- |
+| <img src="docs/assets/preview-main.png" alt="ChargeGuard v3 主界面设计预览" width="240"> | <img src="docs/assets/preview-entries.png" alt="ChargeGuard v3 更多功能设计预览" width="240"> | <img src="docs/assets/preview-history.png" alt="ChargeGuard v3 历史统计设计预览" width="240"> |
+
 ## 这是什么
 
 - 打开就是新主界面：大电量状态卡、实时数据卡、一键预设、更多功能入口，不再是旧版长列表。
