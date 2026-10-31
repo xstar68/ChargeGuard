@@ -301,7 +301,8 @@ jobs:
           xcodebuild -version
 
       - name: Build packages
-        run: ./scripts/build_packages.sh
+        # Web-uploaded files lose +x, so invoke via bash instead of ./ (fixes Permission denied on first v3 build-only run).
+        run: bash scripts/build_packages.sh
 
       - name: Verify expected release assets
         run: |
