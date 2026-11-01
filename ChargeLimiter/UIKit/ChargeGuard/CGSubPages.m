@@ -90,6 +90,40 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
     ]];
 }
 
+// 用户可见的策略事件只显示中文，不显示守护进程内部代号（如 battery_idle）。
+// 事件字典里真正的状态在 to/state/policyState，reason 是原因代号；旧代码
+// 只读 state，读不到就显示 "?"，再把原因代号原样贴出来，才有了 "? battery_idle"。
+static NSString *CGPolicyEventText(NSDictionary *event) {
+    NSString *candidate = event[@"to"];
+    if (![candidate isKindOfClass:[NSString class]] || candidate.length == 0 || [candidate isEqualToString:@"?"]) {
+        candidate = event[@"state"];
+    }
+    if (![candidate isKindOfClass:[NSString class]] || candidate.length == 0 || [candidate isEqualToString:@"?"]) {
+        candidate = event[@"policyState"];
+    }
+    if (![candidate isKindOfClass:[NSString class]] || candidate.length == 0 || [candidate isEqualToString:@"?"]) {
+        candidate = event[@"reason"];
+    }
+    NSDictionary *map = @{
+        @"battery_idle": @"电池空闲",
+        @"battery": @"使用电池",
+        @"charging": @"正在充电",
+        @"charging_active": @"正在充电",
+        @"external_idle": @"外部电源空闲",
+        @"plug_mode_start": @"开始插电模式",
+        @"plug": @"已插电",
+        @"hold": @"保持停充",
+        @"hold_recharge": @"保持后恢复充电",
+        @"hold_target_reached": @"达到停充目标",
+        @"hold_band_lower_reached": @"低于保持区间",
+        @"stop": @"已停充",
+        @"inhibit": @"已停充",
+        @"resume": @"恢复充电",
+    };
+    NSString *text = map[candidate];
+    return text ?: @"策略变化";
+}
+
 #pragma mark - History analytics
 
 @implementation CGHistoryAnalyticsViewController {
@@ -113,12 +147,12 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
     _summaryLabel = CGCardLabel(@"正在读取历史数据…", 15, UIFontWeightRegular, [UIColor labelColor]);
     _timelineStack = CGVerticalStack(@[]);
     [stack addArrangedSubview:CGBackButton(self, @selector(cgGoBack))];
-    [stack addArrangedSubview:CGCardLabel(@"历史统计 · 新版", 24, UIFontWeightBold, [UIColor labelColor])];
+    [stack addArrangedSubview:CGCardLabel(@"历史统计", 24, UIFontWeightBold, [UIColor labelColor])];
     [stack addArrangedSubview:_filter];
     [stack addArrangedSubview:CGCardWithStack(CGVerticalStack(@[_summaryLabel]))];
     [stack addArrangedSubview:CGCardLabel(@"策略事件时间线（彩色圆点：绿色=停充，橙色=恢复充电，灰色=其他）", 14, UIFontWeightSemibold, [UIColor secondaryLabelColor])];
     [stack addArrangedSubview:CGCardWithStack(_timelineStack)];
-    [stack addArrangedSubview:CGTextButton(@"打开完整旧版历史页（图表与全部记录）", self, @selector(openLegacyHistory))];
+    [stack addArrangedSubview:CGTextButton(@"查看完整历史（图表与全部记录）", self, @selector(openLegacyHistory))];
     CGAddScrollStack(self, stack);
     [self refreshAnalytics];
 }
@@ -142,7 +176,7 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
                 return;
             }
             if (error != nil || response == nil) {
-                strongSelf2->_summaryLabel.text = @"历史数据读取失败（守护进程可能离线）。完整旧版页同样依赖同一数据源。";
+                strongSelf2->_summaryLabel.text = @"历史数据读取失败（守护进程可能离线）。";
                 return;
             }
             NSDictionary *data = response[@"data"];
@@ -196,12 +230,11 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
             return;
         }
         for (NSDictionary *event in events) {
-            NSString *state = [NSString stringWithFormat:@"%@", event[@"state"] ?: event[@"policyState"] ?: @"?"];
-            NSString *reason = [NSString stringWithFormat:@"%@", event[@"reason"] ?: @""];
+            NSString *state = CGPolicyEventText(event);
             UIColor *dotColor = [UIColor systemGrayColor];
-            if ([state containsString:@"stop"] || [state containsString:@"停充"]) {
+            if ([state containsString:@"停充"]) {
                 dotColor = [UIColor systemGreenColor];
-            } else if ([state containsString:@"resume"] || [state containsString:@"恢复"]) {
+            } else if ([state containsString:@"恢复"]) {
                 dotColor = [UIColor systemOrangeColor];
             }
             UIView *dot = [[UIView alloc] init];
@@ -209,7 +242,7 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
             dot.layer.cornerRadius = 6;
             [dot.widthAnchor constraintEqualToConstant:12].active = YES;
             [dot.heightAnchor constraintEqualToConstant:12].active = YES;
-            UILabel *label = CGCardLabel([NSString stringWithFormat:@"%@  %@", state, reason], 15, UIFontWeightRegular, [UIColor labelColor]);
+            UILabel *label = CGCardLabel(state, 15, UIFontWeightRegular, [UIColor labelColor]);
             UIStackView *row = [[UIStackView alloc] initWithArrangedSubviews:@[dot, label]];
             row.axis = UILayoutConstraintAxisHorizontal;
             row.spacing = 10;
@@ -249,11 +282,11 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
     self.title = @"电池兼容性测试";
     UIStackView *stack = CGVerticalStack(@[]);
     UILabel *conclusion = CGCardLabel(@"未运行", 32, UIFontWeightBold, [UIColor labelColor]);
-    UILabel *detail = CGCardLabel(@"新版结论卡：运行完整测试后，这里会显示“设备是否可被 ChargeGuard 支持”的大结论与各路径结果。测试标准不变：停充判定仍用 5mA 严标准（守护进程日常停充标准仍为 120mA，两者不要混淆）。测试本身仍在完整旧版页内运行，结果数据与旧版完全一致。", 15, UIFontWeightRegular, [UIColor labelColor]);
+    UILabel *detail = CGCardLabel(@"点下面开始测试，测完这里会显示设备是否支持停充，以及各路径的结果。", 15, UIFontWeightRegular, [UIColor labelColor]);
     [stack addArrangedSubview:CGBackButton(self, @selector(cgGoBack))];
-    [stack addArrangedSubview:CGCardLabel(@"电池兼容性测试 · 新版", 24, UIFontWeightBold, [UIColor labelColor])];
+    [stack addArrangedSubview:CGCardLabel(@"电池兼容性测试", 24, UIFontWeightBold, [UIColor labelColor])];
     [stack addArrangedSubview:CGCardWithStack(CGVerticalStack(@[conclusion, detail]))];
-    [stack addArrangedSubview:CGTextButton(@"运行完整兼容性测试（旧版页）", self, @selector(openLegacyCompat))];
+    [stack addArrangedSubview:CGTextButton(@"运行兼容性测试", self, @selector(openLegacyCompat))];
     CGAddScrollStack(self, stack);
 }
 
@@ -320,15 +353,15 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
     _smartSwitch.tag = 3;
     UIStackView *stack = CGVerticalStack(@[]);
     [stack addArrangedSubview:CGBackButton(self, @selector(cgGoBack))];
-    [stack addArrangedSubview:CGCardLabel(@"充电高级 · 新版", 24, UIFontWeightBold, [UIColor labelColor])];
+    [stack addArrangedSubview:CGCardLabel(@"充电高级", 24, UIFontWeightBold, [UIColor labelColor])];
     [stack addArrangedSubview:CGCardWithStack(CGVerticalStack(@[
         [self switchRowWithTitle:@"完整控制" subtitle:@"主开关：关 = 守护进程不驻留" switch:_enableSwitch],
         [self switchRowWithTitle:@"高温停充" subtitle:@"温度达到阈值时停充" switch:_tempSwitch],
         [self switchRowWithTitle:@"智能停充" subtitle:@"预测式停充，失败时自动回退到传统停充" switch:_smartSwitch],
     ]))];
     [stack addArrangedSubview:_offlineLabel];
-    [stack addArrangedSubview:CGCardLabel(@"开关改动会立即经 CGDaemonClient 写守护进程，失败时自动回滚显示值。其余高级选项（插电保持、限流、满充计划、优化充电等）逻辑与默认值不变，见完整旧版页。", 14, UIFontWeightRegular, [UIColor secondaryLabelColor])];
-    [stack addArrangedSubview:CGTextButton(@"打开完整旧版高级页", self, @selector(openLegacyAdvanced))];
+    [stack addArrangedSubview:CGCardLabel(@"开关改动会立即写入守护进程，失败时自动回滚显示值。其余高级选项（插电保持、限流、满充计划、优化充电等）见更多高级选项。", 14, UIFontWeightRegular, [UIColor secondaryLabelColor])];
+    [stack addArrangedSubview:CGTextButton(@"更多高级选项", self, @selector(openLegacyAdvanced))];
     CGAddScrollStack(self, stack);
     [self refreshSwitches];
 }
@@ -412,16 +445,16 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
     UIStackView *stack = CGVerticalStack(@[]);
     NSString *version = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"?";
     [stack addArrangedSubview:CGBackButton(self, @selector(cgGoBack))];
-    [stack addArrangedSubview:CGCardLabel(@"软件设置 · 新版", 24, UIFontWeightBold, [UIColor labelColor])];
+    [stack addArrangedSubview:CGCardLabel(@"软件设置", 24, UIFontWeightBold, [UIColor labelColor])];
     [stack addArrangedSubview:CGCardWithStack(CGVerticalStack(@[
         CGCardLabel([NSString stringWithFormat:@"ChargeGuard %@", version], 20, UIFontWeightBold, [UIColor labelColor]),
-        CGCardLabel(@"基于 lich4/ChargeLimiter（原版）与 tunecc/ChargeLimiter（分支）更新维护，由 xstar68/ChargeGuard 继续维护。帮助页只保留一个项目链接：xstar68 的项目地址。", 14, UIFontWeightRegular, [UIColor secondaryLabelColor]),
+        CGCardLabel(@"面向 iPhone 的充电控制工具，设上限停充、守温度，延长电池寿命。", 14, UIFontWeightRegular, [UIColor secondaryLabelColor]),
     ]))];
     [stack addArrangedSubview:CGTextButton(@"检查更新（打开 xstar68 发布页）", self, @selector(openReleases))];
     [stack addArrangedSubview:CGTextButton(@"导出诊断报告（可分享，不改配置）", self, @selector(exportDiagnostics))];
     [stack addArrangedSubview:CGTextButton(@"复制自动化链接：开始充电 cl:///charge", self, @selector(copyChargeURL))];
     [stack addArrangedSubview:CGTextButton(@"复制自动化链接：停止充电 cl:///nocharge", self, @selector(copyNoChargeURL))];
-    [stack addArrangedSubview:CGTextButton(@"打开完整旧版软件设置页", self, @selector(openLegacySoftware))];
+    [stack addArrangedSubview:CGTextButton(@"更多软件设置", self, @selector(openLegacySoftware))];
     CGAddScrollStack(self, stack);
 }
 
