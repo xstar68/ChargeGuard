@@ -31,13 +31,17 @@
     if (_loading) {
         PSSpecifier *group = [PSSpecifier groupSpecifierWithName:@"ChargeGuard"];
         [group setProperty:@"正在读取守护进程配置…" forKey:@"footerText"];
-        _specifiers = @[group];
+        // 2026-11-01 构建 #9 真因：PSListController 的 _specifiers 是
+        // NSMutableArray *，@[group] 是 NSArray *，Theos 用 -Werror 编译
+        // 时直接报错。之前打包脚本把 Theos 输出静默丢弃了，这个错一直
+        // 被藏着，只留下一个没有二进制的空 bundle；现在校验放开才暴露。
+        _specifiers = [NSMutableArray arrayWithObject:group];
         return _specifiers;
     }
     if (_offline || _config == nil) {
         PSSpecifier *group = [PSSpecifier groupSpecifierWithName:@"ChargeGuard"];
         [group setProperty:@"守护进程离线：未读取到配置，未显示任何数值。守护进程恢复后重新打开本页即可。" forKey:@"footerText"];
-        _specifiers = @[group];
+        _specifiers = [NSMutableArray arrayWithObject:group];
         return _specifiers;
     }
     NSMutableArray *specifiers = [NSMutableArray array];
