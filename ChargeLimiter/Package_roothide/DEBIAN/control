@@ -1,0 +1,16 @@
+Package: com.chargeguard
+Conflicts: com.chargelimiter.mod
+Replaces: com.chargelimiter.mod
+Name: ChargeGuard
+Version: 3.0
+Description: ChargeGuard（充电守卫）v3.0：面向 iPhone 的充电控制工具，帮你把电量停在设定值、避开高温满充，延长电池寿命。
+ 本版为全新架构重建：主界面、历史、兼容性测试、高级与软件设置全部按新分层架构重做（守护进程客户端/配置模型/视图模型/视图分离，视图不再直连守护进程）；主界面改为渐变英雄卡 + 双列数据网格 + 双列更多功能网格，不再是单列列表；新增充电历史趋势、智能满充建议、温度与健康提醒及循环预测、一键预设与 cl 链接自动化、可导出诊断报告（以上新功能均为只读分析或经确认后才写配置，自身绝不改变停充行为）。
+ 破坏性改名：包名与 Bundle ID 改为 com.chargeguard，桌面应用改为仅 TrollStore 的 ipa，deb 版只进系统设置、不留桌面图标；守护进程改装到 /usr/libexec/ChargeGuardDaemon。deb 安装时自动把旧数据目录 /var/mobile/ChargeLimiter 复制到 /var/mobile/ChargeGuard（旧目录保留作回退），旧包由 Conflicts/Replaces 替换。
+ 充电控制本身的含义没有变：完整控制下按设定值停充（80%/高温 40°C/降温 35°C），高温停充、降温恢复、限流与插电保持规则不变。软件停充不是物理断电，个别设备停充后仍有几十毫安残留电流属于正常软停，不是本版 bug。
+ 基于 lich4/ChargeLimiter 原版与 tunecc/ChargeLimiter 分支更新维护，由 xstar68/ChargeGuard 继续维护。
+Section: Tweaks
+Depends: firmware (>= 13.0)
+Priority: optional
+Architecture: iphoneos-arm64e
+Author: xstar68
+Maintainer: xstar68
