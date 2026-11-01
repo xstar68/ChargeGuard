@@ -5,7 +5,10 @@
 # copies the built bundle into Library/PreferenceBundles. If this build
 # fails, the deb build fails fast instead of shipping a deb with no UI.
 ARCHS = arm64 arm64e
-TARGET = iphone:clang:latest:13.0
+# 用 patched Theos SDK 16.5，因为 Xcode SDK 没有 PrivateFrameworks，链接 Preferences 会失败
+# （build #10 的原因）。工作流会在构建前把 iPhoneOS16.5.sdk 装到 $THEOS/sdks，
+# TARGET 16.5 会选中它。
+TARGET = iphone:clang:16.5:13.0
 
 include $(THEOS)/makefiles/common.mk
 
