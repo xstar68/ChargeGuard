@@ -513,6 +513,11 @@ stage_settings_bundle() {
   mkdir -p "$dest_dir"
   if [ -n "$built_bundle" ] && [ -d "$built_bundle" ]; then
     cp -a "$built_bundle" "$dest_dir/ChargeGuardSettings.bundle"
+    # Theos bundle.mk does not reliably copy Root/Info plists into the
+    # bundle, and Verify (step 10) checks Root.plist inside it. Always
+    # stage them explicitly so a built bundle is never missing its UI page.
+    cp -p "$ROOT_DIR/ChargeLimiter/ChargeGuardSettings/Root.plist" "$dest_dir/ChargeGuardSettings.bundle/Root.plist"
+    cp -p "$ROOT_DIR/ChargeLimiter/ChargeGuardSettings/Info.plist" "$dest_dir/ChargeGuardSettings.bundle/Info.plist"
     return 0
   fi
   if [ "${CHARGEGUARD_ALLOW_SETTINGS_PLIST_ONLY:-0}" = "1" ]; then
