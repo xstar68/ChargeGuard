@@ -62,6 +62,11 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
+    // 2026-11-01 真机 bug：新主界面从未调用 startAutoRefresh，CLBatteryManager
+    // 的电量/电流/电压/温度/健康/循环一直停在初始 0，主界面全是 0%，而配置
+    // 是走 CGDaemonClient 直接读的，所以滑块 80/20/40/35 正常、电池数据全 0。
+    // 旧主界面在 viewWillAppear 里调了 startAutoRefresh，新界面漏了这一行。
+    [[CLBatteryManager shared] startAutoRefresh];
     // A7: refresh on return — otherwise a change made on a sub-page (e.g.
     // an advanced switch) stays stale on the main page for up to 60 s.
     [self refreshAll];
