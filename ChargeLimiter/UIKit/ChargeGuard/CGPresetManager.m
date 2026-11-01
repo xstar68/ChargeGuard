@@ -28,7 +28,7 @@
 
 + (NSArray<CGPreset *> *)allPresets {
     return @[
-        [[CGPreset alloc] initWithIdentifier:@"daily-80" title:@"日常 80%" subtitle:@"延长电池寿命的日常值" stopChargeAbove:80],
+        [[CGPreset alloc] initWithIdentifier:@"daily-80" title:@"日常 80%" subtitle:@"延长电池寿命" stopChargeAbove:80],
         [[CGPreset alloc] initWithIdentifier:@"long-life-60" title:@"长寿 60%" subtitle:@"长期插电时更保守" stopChargeAbove:60],
         [[CGPreset alloc] initWithIdentifier:@"travel-100" title:@"出行 100%" subtitle:@"出门前充满一次" stopChargeAbove:100],
     ];

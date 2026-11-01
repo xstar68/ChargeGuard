@@ -149,7 +149,7 @@
     [self.stack addArrangedSubview:[self sectionTitle:@"充电控制"]];
     [self.stack addArrangedSubview:[self controlCard]];
 
-    [self.stack addArrangedSubview:[self sectionTitle:@"一键预设（点按即应用，仅改停充值）"]];
+    [self.stack addArrangedSubview:[self sectionTitle:@"一键预设"]];
     [self.stack addArrangedSubview:[self presetCard]];
 
     [self.stack addArrangedSubview:[self sectionTitle:@"实时数据"]];
