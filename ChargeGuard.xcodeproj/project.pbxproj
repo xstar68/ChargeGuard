@@ -1178,7 +1178,7 @@
 					/opt/theos/vendor/include,
 					/opt/include,
 				);
-				INFOPLIST_FILE = "${TARGET_NAME}/Info.plist";
+				INFOPLIST_FILE = "ChargeLimiter/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1224,7 +1224,7 @@
 					/opt/theos/vendor/include,
 					/opt/include,
 				);
-				INFOPLIST_FILE = "${TARGET_NAME}/Info.plist";
+				INFOPLIST_FILE = "ChargeLimiter/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
