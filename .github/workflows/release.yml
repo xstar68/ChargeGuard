@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "要发布的 tag，例如 v3.0（build-only 时也必填，仅用于核对 MARKETING_VERSION 与产物命名，不会创建 Release）"
+        description: "要发布的 tag，例如 v3.0（build-only 时也必填，仅用于核对 MARKETING_VERSION 与产物命名，不会创建 Release） "
         required: true
         type: string
       build_only:
@@ -65,6 +65,21 @@ jobs:
           sudo mkdir -p /opt/framework /opt/lib
           test -f /opt/theos/vendor/include/IOKit/hid/IOHIDService.h
           test -f /opt/theos/vendor/include/MobileCoreServices/LSApplicationProxy.h
+
+      - name: Prepare Theos SDK with private frameworks
+        run: |
+          set -euo pipefail
+          # Xcode SDK 没有 PrivateFrameworks，用 patched Theos SDK 16.5 提供 Preferences.tbd，
+          # 否则链接 Preferences 会失败（build #10 的原因）。TARGET=iphone:clang:16.5 会选中该 SDK。
+          sudo mkdir -p /opt/theos/sdks
+          TBD="/opt/theos/sdks/iPhoneOS16.5.sdk/System/Library/PrivateFrameworks/Preferences.framework/Preferences.tbd"
+          if [ ! -f "$TBD" ]; then
+            rm -rf /tmp/theos-sdks
+            git clone --depth 1 --filter=blob:none --sparse https://github.com/theos/sdks.git /tmp/theos-sdks
+            git -C /tmp/theos-sdks sparse-checkout set iPhoneOS16.5.sdk
+            sudo cp -a /tmp/theos-sdks/iPhoneOS16.5.sdk /opt/theos/sdks/
+          fi
+          test -f "$TBD"
 
       # Native roothide path (same as local default ./scripts/build_packages.sh):
       #   HEADER: /opt/theos/vendor/include + /opt/theos/vendor/include/roothide
