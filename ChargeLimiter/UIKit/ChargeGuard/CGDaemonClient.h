@@ -43,6 +43,25 @@ typedef void (^CGVoidCallback)(BOOL success, NSError *_Nullable error);
 // Single-key write, also validated when the key is a known threshold key.
 - (void)setConfigValue:(id)value forKey:(NSString *)key completion:(CGVoidCallback)completion;
 
+// Deep-redo additions (2026-11-01): the new sub-pages must be complete
+// in-page, so the client also exposes the four daemon operations the old
+// advanced/compat pages used. All four go through the same CLAPIClient
+// transport; none adds a daemon protocol or changes stop-charge behaviour.
+// Probe: tries several stop-charge writes, observes, then restores.
+- (void)runChargeControlProbeWithWaitMs:(NSInteger)waitMs
+                               restore:(BOOL)restore
+                            completion:(CGDictionaryCallback)completion;
+// Charging-thermal level: enabled + mode are submitted together, exactly
+// as the old advanced page did (off = limit disabled, falls back to idle).
+- (void)setLimitInflowEnabled:(BOOL)enabled
+                         mode:(NSString *)mode
+                   completion:(CGVoidCallback)completion;
+// Restores system optimised charging; success is judged by the caller
+// from the returned after_status, mirroring the old advanced page.
+- (void)restoreSmartChargeWithCompletion:(CGDictionaryCallback)completion;
+// Resets all daemon config; the caller re-reads config afterwards.
+- (void)resetConfigWithCompletion:(CGVoidCallback)completion;
+
 @end
 
 NS_ASSUME_NONNULL_END

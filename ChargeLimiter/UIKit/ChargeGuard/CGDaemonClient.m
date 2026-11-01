@@ -232,6 +232,36 @@
     }];
 }
 
+- (void)runChargeControlProbeWithWaitMs:(NSInteger)waitMs
+                               restore:(BOOL)restore
+                            completion:(CGDictionaryCallback)completion {
+    [[CLAPIClient shared] runChargeControlProbeWithWaitMs:waitMs restore:restore completion:completion];
+}
+
+- (void)setLimitInflowEnabled:(BOOL)enabled
+                         mode:(NSString *)mode
+                   completion:(CGVoidCallback)completion {
+    [[CLAPIClient shared] setLimitInflowEnabled:enabled mode:(mode ?: @"off") completion:^(NSDictionary *response, NSError *error) {
+        if (completion != nil) {
+            BOOL ok = (error == nil && (response == nil || [response[@"status"] intValue] == 0));
+            completion(ok, error);
+        }
+    }];
+}
+
+- (void)restoreSmartChargeWithCompletion:(CGDictionaryCallback)completion {
+    [[CLAPIClient shared] restoreSmartChargeWithCompletion:completion];
+}
+
+- (void)resetConfigWithCompletion:(CGVoidCallback)completion {
+    [[CLAPIClient shared] resetConfigWithCompletion:^(NSDictionary *response, NSError *error) {
+        if (completion != nil) {
+            BOOL ok = (error == nil && (response == nil || [response[@"status"] intValue] == 0));
+            completion(ok, error);
+        }
+    }];
+}
+
 - (void)writeSingleKey:(NSString *)key value:(id)value completion:(CGVoidCallback)completion {
     [[CLAPIClient shared] setConfigWithKey:key value:value completion:^(NSDictionary *response, NSError *error) {
         if (completion != nil) {

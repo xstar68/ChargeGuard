@@ -19,10 +19,6 @@
 // Legacy full pages (declared in their .m files, no public headers).
 // Forward declarations let the new pages route to them without patching
 // the legacy controllers.
-@interface CLHistoryViewController : UIViewController
-@end
-@interface CLAdvancedSettingsViewController : UIViewController
-@end
 @interface CLHelpViewController : UIViewController
 @end
 
@@ -168,10 +164,10 @@
     self.entryGrid = [[CGEntryGridView alloc] init];
     __weak typeof(self) weakSelf = self;
     [self.entryGrid updateWithEntries:@[
-        @{@"title": @"📊 历史统计", @"subtitle": @"趋势 · 满充建议 · 预测"},
-        @{@"title": @"🧪 电池兼容性测试", @"subtitle": @"大结论卡 · 探针结果"},
-        @{@"title": @"⚙️ 充电高级", @"subtitle": @"分组卡 · 右侧开关"},
-        @{@"title": @"🔧 软件设置", @"subtitle": @"更新 · 诊断导出 · 自动化"},
+        @{@"title": @"📊 历史统计", @"subtitle": @"曲线 · 统计开关 · 事件时间线"},
+        @{@"title": @"🧪 电池兼容性测试", @"subtitle": @"前置检查 · 页内实测 · 探针"},
+        @{@"title": @"⚙️ 充电高级", @"subtitle": @"全部开关 · 档位 · 诊断"},
+        @{@"title": @"🔧 软件设置", @"subtitle": @"更新检查 · 诊断导出 · 自动化"},
     ] tapHandler:^(NSInteger index) {
         [weakSelf openEntryAtIndex:index];
     }];
@@ -234,10 +230,15 @@
 }
 
 - (UIView *)presetCard {
-    UIStackView *row = [[UIStackView alloc] init];
-    row.axis = UILayoutConstraintAxisHorizontal;
-    row.spacing = 10;
-    row.distribution = UIStackViewDistributionFillEqually;
+    // Deep redo (2026-11-01): the old 3-column layout squeezed each preset
+    // into ~105pt, so a subtitle wrapped mid-word across two lines. Now
+    // each preset is a full-width row: title single-line on the left
+    // (shrinks to fit, never wraps), subtitle single-line on the right
+    // (truncated at the tail, never wrapped). Tap logic is unchanged:
+    // the button tag is still 1000 + stop value, matched in presetTapped:.
+    UIStackView *column = [[UIStackView alloc] init];
+    column.axis = UILayoutConstraintAxisVertical;
+    column.spacing = 10;
     for (CGPreset *preset in [CGPresetManager allPresets]) {
         UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
         button.backgroundColor = [UIColor secondarySystemBackgroundColor];
@@ -248,17 +249,38 @@
         button.layer.shadowOpacity = 0.10;
         button.layer.shadowRadius = 18;
         button.layer.shadowOffset = CGSizeMake(0, 10);
-        button.titleLabel.numberOfLines = 0;
-        button.titleLabel.textAlignment = NSTextAlignmentCenter;
-        [button setTitle:[NSString stringWithFormat:@"%@\n%@", preset.title, preset.subtitle] forState:UIControlStateNormal];
-        button.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+        button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentFill;
         [button addTarget:self action:@selector(presetTapped:) forControlEvents:UIControlEventTouchUpInside];
-        // Identify the preset by its stop value via the button tag offset.
         button.tag = 1000 + preset.stopChargeAbove;
-        [button.heightAnchor constraintEqualToConstant:64].active = YES;
-        [row addArrangedSubview:button];
+        [button.heightAnchor constraintEqualToConstant:52].active = YES;
+        UILabel *titleLabel = [[UILabel alloc] init];
+        titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
+        titleLabel.textColor = [UIColor labelColor];
+        titleLabel.numberOfLines = 1;
+        titleLabel.adjustsFontSizeToFitWidth = YES;
+        titleLabel.minimumScaleFactor = 0.75;
+        titleLabel.text = preset.title;
+        titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        UILabel *subtitleLabel = [[UILabel alloc] init];
+        subtitleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightRegular];
+        subtitleLabel.textColor = [UIColor secondaryLabelColor];
+        subtitleLabel.numberOfLines = 1;
+        subtitleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+        subtitleLabel.textAlignment = NSTextAlignmentRight;
+        subtitleLabel.text = preset.subtitle;
+        subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        [button addSubview:titleLabel];
+        [button addSubview:subtitleLabel];
+        [NSLayoutConstraint activateConstraints:@[
+            [titleLabel.leadingAnchor constraintEqualToAnchor:button.leadingAnchor constant:20],
+            [titleLabel.centerYAnchor constraintEqualToAnchor:button.centerYAnchor],
+            [subtitleLabel.leadingAnchor constraintEqualToAnchor:titleLabel.trailingAnchor constant:8],
+            [subtitleLabel.trailingAnchor constraintEqualToAnchor:button.trailingAnchor constant:-20],
+            [subtitleLabel.centerYAnchor constraintEqualToAnchor:button.centerYAnchor],
+        ]];
+        [column addArrangedSubview:button];
     }
-    return row;
+    return column;
 }
 
 #pragma mark - Data
