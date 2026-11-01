@@ -552,14 +552,18 @@ static CGFloat CGChartValue(NSDictionary *sample, NSString *key, NSString *altKe
     _filter = [[CGCapsuleFilterView alloc] initWithTitles:@[@"5分钟", @"小时", @"天", @"月"]
                                             selectedIndex:0
                                               changeHandler:^(NSInteger index) {
-        weakSelf->_offset = 0;
-        [weakSelf refreshHistory];
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        strongSelf->_offset = 0;
+        [strongSelf refreshHistory];
     }];
     _eventFilter = [[CGCapsuleFilterView alloc] initWithTitles:@[@"全部", @"状态", @"保持", @"接管", @"温控"]
                                                  selectedIndex:0
                                                    changeHandler:^(NSInteger index) {
-        weakSelf->_eventFilterIndex = index;
-        [weakSelf refreshTimeline];
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        strongSelf->_eventFilterIndex = index;
+        [strongSelf refreshTimeline];
     }];
     _chartView = [[CGHistoryChartView alloc] init];
     _chartView.backgroundColor = [UIColor clearColor];
@@ -755,23 +759,29 @@ static CGFloat CGChartValue(NSDictionary *sample, NSString *key, NSString *altKe
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"关闭历史统计" message:@"关闭后将停止继续采集历史统计。你可以保留已有记录，或同时删除已有历史统计数据。" preferredStyle:UIAlertControllerStyleActionSheet];
     [alert addAction:[UIAlertAction actionWithTitle:@"保留历史记录" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         [CLBatteryManager shared].historyStatsEnabled = NO;
-        weakSelf->_statsEnabled = NO;
-        [weakSelf refreshHistory];
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        strongSelf->_statsEnabled = NO;
+        [strongSelf refreshHistory];
     }]];
     [alert addAction:[UIAlertAction actionWithTitle:@"删除历史记录" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         [CLBatteryManager shared].historyStatsEnabled = NO;
-        weakSelf->_statsEnabled = NO;
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        strongSelf->_statsEnabled = NO;
         [[CLBatteryManager shared] clearStatisticsWithCompletion:^(BOOL success) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 if (success) {
-                    weakSelf->_min5Samples = @[]; weakSelf->_hourSamples = @[]; weakSelf->_daySamples = @[]; weakSelf->_monthSamples = @[];
+                    strongSelf->_min5Samples = @[]; strongSelf->_hourSamples = @[]; strongSelf->_daySamples = @[]; strongSelf->_monthSamples = @[];
                 }
-                [weakSelf refreshHistory];
+                [strongSelf refreshHistory];
             });
         }];
     }]];
     [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
-        weakSelf->_statsSwitch.on = YES;
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        strongSelf->_statsSwitch.on = YES;
     }]];
     [self presentViewController:alert animated:YES completion:nil];
 }
@@ -1857,8 +1867,10 @@ static CGFloat CGChartValue(NSDictionary *sample, NSString *key, NSString *altKe
         for (NSInteger i = 0; i < 4; i++) {
             [alert addAction:[UIAlertAction actionWithTitle:titles[(NSUInteger)i] style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
                 setlocalKV_C(@"SliderHapticStyle", @(i));
-                weakSelf->_hapticSlider.value = i * 33.0;
-                [weakSelf refreshSoftwareRows];
+                __strong typeof(weakSelf) strongSelf = weakSelf;
+                if (!strongSelf) return;
+                strongSelf->_hapticSlider.value = i * 33.0;
+                [strongSelf refreshSoftwareRows];
             }]];
         }
         [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
