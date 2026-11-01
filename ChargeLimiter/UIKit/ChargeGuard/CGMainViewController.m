@@ -49,7 +49,8 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor systemBackgroundColor];
+    // iOS 27 Liquid Glass: grouped background lets the frosted cards float.
+    self.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
     self.sliders = [NSMutableDictionary dictionary];
     self.sliderValueLabels = [NSMutableDictionary dictionary];
     [self setupUI];
@@ -93,7 +94,7 @@
 
 - (UILabel *)sectionTitle:(NSString *)text {
     UILabel *label = [[UILabel alloc] init];
-    label.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+    label.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
     label.textColor = [UIColor secondaryLabelColor];
     label.text = text;
     return label;
@@ -105,7 +106,7 @@
     [self.view addSubview:self.scrollView];
     self.stack = [[UIStackView alloc] init];
     self.stack.axis = UILayoutConstraintAxisVertical;
-    self.stack.spacing = 16;
+    self.stack.spacing = 20;
     self.stack.translatesAutoresizingMaskIntoConstraints = NO;
     [self.scrollView addSubview:self.stack];
     [NSLayoutConstraint activateConstraints:@[
@@ -113,31 +114,36 @@
         [self.scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.scrollView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
         [self.scrollView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
-        [self.stack.topAnchor constraintEqualToAnchor:self.scrollView.topAnchor constant:16],
-        [self.stack.leadingAnchor constraintEqualToAnchor:self.scrollView.leadingAnchor constant:16],
-        [self.stack.trailingAnchor constraintEqualToAnchor:self.scrollView.trailingAnchor constant:-16],
+        [self.stack.topAnchor constraintEqualToAnchor:self.scrollView.topAnchor constant:8],
+        [self.stack.leadingAnchor constraintEqualToAnchor:self.scrollView.leadingAnchor constant:20],
+        [self.stack.trailingAnchor constraintEqualToAnchor:self.scrollView.trailingAnchor constant:-20],
         [self.stack.bottomAnchor constraintEqualToAnchor:self.scrollView.bottomAnchor constant:-40],
-        [self.stack.widthAnchor constraintEqualToAnchor:self.scrollView.widthAnchor constant:-32],
+        [self.stack.widthAnchor constraintEqualToAnchor:self.scrollView.widthAnchor constant:-40],
     ]];
 
     UILabel *title = [[UILabel alloc] init];
-    title.font = [UIFont systemFontOfSize:28 weight:UIFontWeightBold];
+    title.font = [UIFont systemFontOfSize:34 weight:UIFontWeightHeavy];
     title.text = @"ChargeGuard";
     [self.stack addArrangedSubview:title];
+    UILabel *subtitle = [[UILabel alloc] init];
+    subtitle.font = [UIFont systemFontOfSize:15 weight:UIFontWeightRegular];
+    subtitle.textColor = [UIColor secondaryLabelColor];
+    subtitle.text = @"停充保护 · 温度守护 · 电池健康";
+    [self.stack addArrangedSubview:subtitle];
 
     self.bannerLabel = [[UILabel alloc] init];
     self.bannerLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
     self.bannerLabel.textAlignment = NSTextAlignmentCenter;
-    self.bannerLabel.layer.cornerRadius = 10;
+    self.bannerLabel.layer.cornerRadius = 16;
     self.bannerLabel.layer.masksToBounds = YES;
     self.bannerLabel.text = @"读取中…请稍候，正在从守护进程读取配置";
     self.bannerLabel.backgroundColor = [UIColor systemOrangeColor];
     self.bannerLabel.textColor = [UIColor whiteColor];
-    [self.bannerLabel.heightAnchor constraintEqualToConstant:36].active = YES;
+    [self.bannerLabel.heightAnchor constraintEqualToConstant:40].active = YES;
     [self.stack addArrangedSubview:self.bannerLabel];
 
     self.heroView = [[CGHeroView alloc] init];
-    [self.heroView.heightAnchor constraintEqualToConstant:170].active = YES;
+    [self.heroView.heightAnchor constraintEqualToConstant:196].active = YES;
     [self.stack addArrangedSubview:self.heroView];
 
     [self.stack addArrangedSubview:[self sectionTitle:@"充电控制"]];
@@ -178,19 +184,17 @@
 }
 
 - (UIView *)controlCard {
-    UIView *card = [[UIView alloc] init];
-    card.backgroundColor = [UIColor secondarySystemBackgroundColor];
-    card.layer.cornerRadius = 16;
+    UIView *card = [[CGGlassView alloc] init];
     UIStackView *stack = [[UIStackView alloc] init];
     stack.axis = UILayoutConstraintAxisVertical;
     stack.spacing = 12;
     stack.translatesAutoresizingMaskIntoConstraints = NO;
     [card addSubview:stack];
     [NSLayoutConstraint activateConstraints:@[
-        [stack.topAnchor constraintEqualToAnchor:card.topAnchor constant:16],
-        [stack.leadingAnchor constraintEqualToAnchor:card.leadingAnchor constant:16],
-        [stack.trailingAnchor constraintEqualToAnchor:card.trailingAnchor constant:-16],
-        [stack.bottomAnchor constraintEqualToAnchor:card.bottomAnchor constant:-16],
+        [stack.topAnchor constraintEqualToAnchor:card.topAnchor constant:20],
+        [stack.leadingAnchor constraintEqualToAnchor:card.leadingAnchor constant:20],
+        [stack.trailingAnchor constraintEqualToAnchor:card.trailingAnchor constant:-20],
+        [stack.bottomAnchor constraintEqualToAnchor:card.bottomAnchor constant:-20],
     ]];
     // Slider tags: 1 stop (15-100), 2 start (10-95), 3 high temp (30-50), 4 low temp (25-49).
     // Ranges, defaults and write-once-on-release semantics are unchanged from v2.0.
@@ -237,7 +241,13 @@
     for (CGPreset *preset in [CGPresetManager allPresets]) {
         UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
         button.backgroundColor = [UIColor secondarySystemBackgroundColor];
-        button.layer.cornerRadius = 14;
+        button.layer.cornerRadius = 24;
+        button.layer.borderWidth = 0.5;
+        button.layer.borderColor = [[UIColor whiteColor] colorWithAlphaComponent:0.45].CGColor;
+        button.layer.shadowColor = [UIColor blackColor].CGColor;
+        button.layer.shadowOpacity = 0.10;
+        button.layer.shadowRadius = 18;
+        button.layer.shadowOffset = CGSizeMake(0, 10);
         button.titleLabel.numberOfLines = 0;
         button.titleLabel.textAlignment = NSTextAlignmentCenter;
         [button setTitle:[NSString stringWithFormat:@"%@\n%@", preset.title, preset.subtitle] forState:UIControlStateNormal];

@@ -52,16 +52,14 @@ static UILabel *CGCardLabel(NSString *text, CGFloat size, UIFontWeight weight, U
 }
 
 static UIView *CGCardWithStack(UIStackView *stack) {
-    UIView *card = [[UIView alloc] init];
-    card.backgroundColor = [UIColor secondarySystemBackgroundColor];
-    card.layer.cornerRadius = 16;
+    UIView *card = [[CGGlassView alloc] init];
     stack.translatesAutoresizingMaskIntoConstraints = NO;
     [card addSubview:stack];
     [NSLayoutConstraint activateConstraints:@[
-        [stack.topAnchor constraintEqualToAnchor:card.topAnchor constant:16],
-        [stack.leadingAnchor constraintEqualToAnchor:card.leadingAnchor constant:16],
-        [stack.trailingAnchor constraintEqualToAnchor:card.trailingAnchor constant:-16],
-        [stack.bottomAnchor constraintEqualToAnchor:card.bottomAnchor constant:-16],
+        [stack.topAnchor constraintEqualToAnchor:card.topAnchor constant:20],
+        [stack.leadingAnchor constraintEqualToAnchor:card.leadingAnchor constant:20],
+        [stack.trailingAnchor constraintEqualToAnchor:card.trailingAnchor constant:-20],
+        [stack.bottomAnchor constraintEqualToAnchor:card.bottomAnchor constant:-20],
     ]];
     return card;
 }
@@ -84,11 +82,11 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
         [scroll.leadingAnchor constraintEqualToAnchor:vc.view.leadingAnchor],
         [scroll.trailingAnchor constraintEqualToAnchor:vc.view.trailingAnchor],
         [scroll.bottomAnchor constraintEqualToAnchor:vc.view.bottomAnchor],
-        [stack.topAnchor constraintEqualToAnchor:scroll.topAnchor constant:16],
-        [stack.leadingAnchor constraintEqualToAnchor:scroll.leadingAnchor constant:16],
-        [stack.trailingAnchor constraintEqualToAnchor:scroll.trailingAnchor constant:-16],
+        [stack.topAnchor constraintEqualToAnchor:scroll.topAnchor constant:8],
+        [stack.leadingAnchor constraintEqualToAnchor:scroll.leadingAnchor constant:20],
+        [stack.trailingAnchor constraintEqualToAnchor:scroll.trailingAnchor constant:-20],
         [stack.bottomAnchor constraintEqualToAnchor:scroll.bottomAnchor constant:-40],
-        [stack.widthAnchor constraintEqualToAnchor:scroll.widthAnchor constant:-32],
+        [stack.widthAnchor constraintEqualToAnchor:scroll.widthAnchor constant:-40],
     ]];
 }
 
@@ -103,7 +101,7 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor systemBackgroundColor];
+    self.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
     self.title = @"历史统计";
     UIStackView *stack = CGVerticalStack(@[]);
     __weak typeof(self) weakSelf = self;
@@ -247,7 +245,7 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor systemBackgroundColor];
+    self.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
     self.title = @"电池兼容性测试";
     UIStackView *stack = CGVerticalStack(@[]);
     UILabel *conclusion = CGCardLabel(@"未运行", 32, UIFontWeightBold, [UIColor labelColor]);
@@ -302,7 +300,7 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor systemBackgroundColor];
+    self.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
     self.title = @"充电高级";
     _enableSwitch = [[UISwitch alloc] init];
     _tempSwitch = [[UISwitch alloc] init];
@@ -409,7 +407,7 @@ static void CGAddScrollStack(UIViewController *vc, UIStackView *stack) {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor systemBackgroundColor];
+    self.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
     self.title = @"软件设置";
     UIStackView *stack = CGVerticalStack(@[]);
     NSString *version = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"?";

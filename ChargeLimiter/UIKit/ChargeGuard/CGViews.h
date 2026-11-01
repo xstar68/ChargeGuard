@@ -11,7 +11,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// Gradient hero card: big percent, status, two pills (mode / adapter).
+// iOS 27 Liquid Glass card (UIKit back-port): frosted blur, hairline
+// highlight edge, soft shadow, 28pt radius. Subviews added after init
+// sit on top of the blur layer.
+@interface CGGlassView : UIView
+@end
+
+// Glass hero card: big percent, status, two pills (mode / adapter),
+// plus a gradient battery ring on the right.
 @interface CGHeroView : UIView
 - (void)updateWithPercentText:(NSString *)percentText
                    statusText:(NSString *)statusText
