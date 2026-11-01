@@ -1,0 +1,50 @@
+#!/bin/sh
+
+CACHE1="/var/jb/var/mobile/Library/Preferences/com.chargeguard.containerpath"
+CACHE2="/var/mobile/Library/Preferences/com.chargeguard.containerpath"
+
+resolve_jbroot() {
+    # roothide preferred: use jbroot tool if available.
+    for cmd in /usr/bin/jbroot /var/jb/usr/bin/jbroot jbroot; do
+        if command -v "$cmd" >/dev/null 2>&1; then
+            rooted="$($cmd /var/mobile/Library/Preferences 2>/dev/null)"
+            if [ -n "$rooted" ] && [ "${rooted#/}" != "$rooted" ]; then
+                printf '%s' "$rooted"
+                return 0
+            fi
+        elif [ -x "$cmd" ]; then
+            rooted="$($cmd /var/mobile/Library/Preferences 2>/dev/null)"
+            if [ -n "$rooted" ] && [ "${rooted#/}" != "$rooted" ]; then
+                printf '%s' "$rooted"
+                return 0
+            fi
+        fi
+    done
+
+    # fallback: resolve /var/jb symlink target
+    if [ -d /var/jb ]; then
+        rooted="$(cd /var/jb 2>/dev/null && pwd -P)"
+        if [ -n "$rooted" ] && [ "${rooted#/}" != "$rooted" ]; then
+            printf '%s' "$rooted/var/mobile/Library/Preferences"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+CACHE3=""
+if JB_PREFS_DIR="$(resolve_jbroot)"; then
+    CACHE3="$JB_PREFS_DIR/com.chargeguard.containerpath"
+fi
+
+case "$1" in
+    remove|purge)
+        rm -f "$CACHE1" "$CACHE2"
+        [ -n "$CACHE3" ] && rm -f "$CACHE3"
+        ;;
+esac
+
+# v3.0 deb 版无桌面应用：不做 uicache。
+
+exit 0
