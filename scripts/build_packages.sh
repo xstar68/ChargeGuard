@@ -506,12 +506,16 @@ stage_settings_bundle() {
   built_bundle=""
   if [ -d "$ROOT_DIR/ChargeLimiter/ChargeGuardSettings" ]; then
     if [ -n "${THEOS:-}" ] || [ -d /opt/theos ]; then
-      (cd "$ROOT_DIR/ChargeLimiter/ChargeGuardSettings" && THEOS="${THEOS:-/opt/theos}" make -s 2>/dev/null || true)
+      # Do NOT silence Theos: a failed bundle build must be visible, and
+      # a bundle without its executable must never ship (2026-11-01
+      # roothide test: bundle shipped with only plists, so Settings
+      # showed no entry at all).
+      (cd "$ROOT_DIR/ChargeLimiter/ChargeGuardSettings" && THEOS="${THEOS:-/opt/theos}" make)
       built_bundle="$(find "$ROOT_DIR/ChargeLimiter/ChargeGuardSettings/.theos" -maxdepth 4 -type d -name 'ChargeGuardSettings.bundle' 2>/dev/null | head -n 1 || true)"
     fi
   fi
   mkdir -p "$dest_dir"
-  if [ -n "$built_bundle" ] && [ -d "$built_bundle" ]; then
+  if [ -n "$built_bundle" ] && [ -d "$built_bundle" ] && [ -f "$built_bundle/ChargeGuardSettings" ]; then
     cp -a "$built_bundle" "$dest_dir/ChargeGuardSettings.bundle"
     # Theos bundle.mk does not reliably copy Root/Info plists into the
     # bundle, and Verify (step 10) checks Root.plist inside it. Always
@@ -519,6 +523,11 @@ stage_settings_bundle() {
     cp -p "$ROOT_DIR/ChargeLimiter/ChargeGuardSettings/Root.plist" "$dest_dir/ChargeGuardSettings.bundle/Root.plist"
     cp -p "$ROOT_DIR/ChargeLimiter/ChargeGuardSettings/Info.plist" "$dest_dir/ChargeGuardSettings.bundle/Info.plist"
     return 0
+  fi
+  if [ -n "$built_bundle" ] && [ -d "$built_bundle" ]; then
+    echo "[ERR] Settings bundle built but executable missing: $built_bundle/ChargeGuardSettings" >&2
+    echo "[ERR] Refusing to ship a plist-only bundle (Settings would show no entry)." >&2
+    exit 1
   fi
   if [ "${CHARGEGUARD_ALLOW_SETTINGS_PLIST_ONLY:-0}" = "1" ]; then
     echo "[WARN] Settings bundle binary not built; staging plist-only bundle for debugging only." >&2
@@ -753,6 +762,10 @@ check_rootful_stage() {
     echo "[ERR] Missing rootful Settings bundle: $bundle_path" >&2
     exit 1
   }
+  [ -f "$bundle_path/ChargeGuardSettings" ] || {
+    echo "[ERR] Missing rootful Settings bundle executable: $bundle_path/ChargeGuardSettings" >&2
+    exit 1
+  }
   [ -f "$stage_path/Library/PreferenceLoader/Preferences/ChargeGuard.plist" ] || {
     echo "[ERR] Missing rootful PreferenceLoader entry: $stage_path/Library/PreferenceLoader/Preferences/ChargeGuard.plist" >&2
     exit 1
@@ -792,6 +805,10 @@ check_rootless_stage() {
   }
   [ -f "$bundle_path/Root.plist" ] || {
     echo "[ERR] Missing rootless Settings bundle: $bundle_path" >&2
+    exit 1
+  }
+  [ -f "$bundle_path/ChargeGuardSettings" ] || {
+    echo "[ERR] Missing rootless Settings bundle executable: $bundle_path/ChargeGuardSettings" >&2
     exit 1
   }
   [ -f "$stage_path/var/jb/Library/PreferenceLoader/Preferences/ChargeGuard.plist" ] || {
@@ -838,6 +855,10 @@ check_roothide_stage() {
 
   [ -f "$BUNDLE_PATH/Root.plist" ] || {
     echo "[ERR] Missing roothide Settings bundle: $BUNDLE_PATH" >&2
+    exit 1
+  }
+  [ -f "$BUNDLE_PATH/ChargeGuardSettings" ] || {
+    echo "[ERR] Missing roothide Settings bundle executable: $BUNDLE_PATH/ChargeGuardSettings" >&2
     exit 1
   }
 
