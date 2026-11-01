@@ -1,0 +1,13 @@
+#!/bin/sh
+
+CACHE="/var/mobile/Library/Preferences/com.chargeguard.containerpath"
+
+case "$1" in
+    remove|purge)
+        rm -f "$CACHE"
+        ;;
+esac
+
+# v3.0 deb 版无桌面应用：不做 uicache。
+
+exit 0

@@ -1,0 +1,72 @@
+#!/bin/sh
+
+DAEMON_BIN="/usr/libexec/ChargeGuardDaemon"
+DAEMON_PLIST="/Library/LaunchDaemons/com.chargeguard.plist"
+CACHE="/var/mobile/Library/Preferences/com.chargeguard.containerpath"
+
+# 修复共享配置数据目录权限：daemon 以 root 运行时会以 root:wheel 创建文件，
+# 导致 mobile App 无法以原子替换方式写入 com.chargeguard.plist。
+# 这里在 bootstrap daemon 之前统一校正，确保 mobile 进程可读写。
+DATA_DIR="/var/mobile/ChargeGuard"
+
+repair_shared_data_permissions() {
+    if [ -d "$DATA_DIR" ]; then
+        chown mobile:mobile "$DATA_DIR"
+        chmod 0750 "$DATA_DIR"
+    fi
+    for conf_path in "$DATA_DIR"/com.chargeguard.plist; do
+        if [ -e "$conf_path" ]; then
+            chown mobile:mobile "$conf_path"
+            chmod 0640 "$conf_path"
+        fi
+    done
+}
+
+chown root:wheel "$DAEMON_BIN"
+chmod +s "$DAEMON_BIN"
+killall -9 ChargeLimiter ChargeGuardDaemon 2>/dev/null
+rm -f "$CACHE"
+
+# 在 daemon bootstrap 前修复共享数据目录权限，避免 daemon 重新夺走所有权。
+repair_shared_data_permissions
+# v3.0 破坏性改名迁移：旧数据目录 -> 新数据目录；新目录缺失或为空时才复制，旧目录绝不删除。
+OLD_DATA_DIR="/var/mobile/ChargeLimiter"
+NEW_DATA_DIR="/var/mobile/ChargeGuard"
+if [ -d "$OLD_DATA_DIR" ] && { [ ! -d "$NEW_DATA_DIR" ] || [ -z "$(ls -A "$NEW_DATA_DIR" 2>/dev/null)" ]; }; then
+    mkdir -p "$NEW_DATA_DIR"
+    cp -a "$OLD_DATA_DIR"/. "$NEW_DATA_DIR"/ 2>/dev/null || true
+fi
+
+# Step 1 修复：旧配置文件改名。旧配置名为 com.chargelimiter.mod.plist，
+# 新代码只读 com.chargeguard.plist；旧名文件若已拷过来且新名文件不存在，
+# 复制为新名（旧目录本身绝不删除，旧名文件也保留在新目录内作备份）。
+if [ -e "$NEW_DATA_DIR/com.chargelimiter.mod.plist" ] && [ ! -e "$NEW_DATA_DIR/com.chargeguard.plist" ]; then
+    cp -a "$NEW_DATA_DIR/com.chargelimiter.mod.plist" "$NEW_DATA_DIR/com.chargeguard.plist" 2>/dev/null || true
+fi
+
+# Overnight fix: also cover the case where the new dir already exists non-empty
+# (daemon logs/db, partial install) without a new-named config — the old config
+# lives only in the old dir and the copy block above never ran.
+if [ ! -e "$NEW_DATA_DIR/com.chargeguard.plist" ] && [ -e "$OLD_DATA_DIR/com.chargelimiter.mod.plist" ]; then
+    cp -a "$OLD_DATA_DIR/com.chargelimiter.mod.plist" "$NEW_DATA_DIR/com.chargeguard.plist" 2>/dev/null || true
+fi
+
+# Step 1 修复：复制后再次修复权限（此前只在复制前修过一次，
+# 拷进来的旧文件仍是旧属主，mobile 原子替换新配置会失败）。
+repair_shared_data_permissions
+
+chown root:wheel "$DAEMON_PLIST"
+# Step 1 修复：显式停掉旧守护进程作业。只 kill 进程不够，launchd 里已加载的
+# 旧 com.chargelimiter.mod 作业会在 kill 后把旧守护进程拉起来。
+launchctl bootout system/com.chargelimiter.mod 2>/dev/null
+launchctl bootout system /Library/LaunchDaemons/com.chargelimiter.mod.plist 2>/dev/null
+launchctl bootout system "$DAEMON_PLIST" 2>/dev/null
+launchctl bootstrap system "$DAEMON_PLIST" 2>/dev/null || launchctl load "$DAEMON_PLIST" 2>/dev/null
+
+# CLThermalSim 只在 thermalmonitord 启动时注入（Powercuff 同款重载）：升级后必须
+# 重启 thermalmonitord 才能换掉内存中的旧版 tweak，否则旧代码继续驻留执行。
+killall thermalmonitord 2>/dev/null
+
+# v3.0 deb 版无桌面应用：不做 uicache，设置入口由 PreferenceLoader 加载。
+
+exit 0
